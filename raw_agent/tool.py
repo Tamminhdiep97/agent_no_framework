@@ -3,9 +3,9 @@ from urllib.parse import quote
 import requests
 from loguru import logger
 
-
+# you should change this header to your own
 headers = {
-        "User-Agent": "TamDiepMinh-Agent/1.0 (+https://example.com/contact)"  # Custom UA
+        "User-Agent": "agent_no_framework/1.0 (+https://example.com/contact)"
     }
 
 def get_weather(location: str) -> str:
