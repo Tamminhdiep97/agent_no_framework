@@ -1,14 +1,17 @@
 import json
 import uuid
 from typing import List, Dict, Any, Optional
+
+from pydantic import BaseModel, Field
 from loguru import logger
 
 from llm import chat_completion
 from config import (
-    PROMPT_WEATHER_AGENT,
-    PROMPT_LOCATION_AGENT,
+    PROMPT_WEATHER_AGENT_TEMPLATE,
+    PROMPT_LOCATION_AGENT_TEMPLATE,
     PROMPT_SYNTHESIZER_AGENT,
     make_planner_prompt,
+    make_tool_agent_prompt,
 )
 
 from tool import get_weather, search_location_info
@@ -18,7 +21,7 @@ TOOL_FUNCS = {
     "search_location_info": search_location_info,
 }
 
-TOOL_SPECS = [
+ALL_TOOL_SPECS = [
     {
         "type": "function",
         "function": {
@@ -49,6 +52,14 @@ TOOL_SPECS = [
     },
 ]
 
+
+class PlanStep(BaseModel):
+    agent: str = Field(..., description="Name of the agent to call (e.g., 'WeatherAgent').")
+    input: str = Field(..., description="Input to pass to the agent.")
+
+class PlannerOutput(BaseModel):
+    plan: List[PlanStep] = Field(default_factory=list)
+    notes: str = Field(default="", description="Rationale from the planner.")
 
 # -----  memory per agent -----
 class Memory:
@@ -85,6 +96,7 @@ class BaseAgent:
         self.name = name
         self.system_prompt = system_prompt
         self.tools_enabled = tools_enabled
+        self.my_tool_specs = []
         # Allow injected shared memory, otherwise private memory
         if memory is not None:
             self.memory = memory
@@ -98,7 +110,7 @@ class BaseAgent:
         self.memory.add("user", user_input)
 
         # First call
-        message = chat_completion(self.memory.get(), tools=TOOL_SPECS if self.tools_enabled else None)
+        message = chat_completion(self.memory.get(), tools=self.my_tool_specs if self.tools_enabled else None)
 
         loops = 0
         while True:
@@ -147,7 +159,7 @@ class BaseAgent:
                 logger.info(f"[{self.name}] Tool result: {result}")
 
             # ask again
-            message = chat_completion(self.memory.get(), tools=TOOL_SPECS if self.tools_enabled else None)
+            message = chat_completion(self.memory.get(), tools=self.my_tool_specs if self.tools_enabled else None)
 
             if loops >= max_tool_loops:
                 logger.warning(f"[{self.name}] Max tool loops reached.")
@@ -201,25 +213,49 @@ class PlannerAgent(BaseAgent):
 
 
 class WeatherAgent(BaseAgent):
-    DESCRIPTION = "Fetches current weather for a city via get_weather(location)."
+    DESCRIPTION = "Fetches current weather information for a specified location."
 
     def __init__(self):
+        # Define the specific tools this agent has access to
+        my_tool_specs = [ALL_TOOL_SPECS[0]]
+        # Define the specific instruction for these tools
+        my_tool_instruction = "You have access to a tool that retrieves the current weather for a given location."
+
+        # Dynamically generate the system prompt using the helper function
+        system_prompt = make_tool_agent_prompt(
+            agent_name=self.__class__.__name__,
+            tool_instruction=my_tool_instruction,
+            base_template=PROMPT_WEATHER_AGENT_TEMPLATE
+        )
         super().__init__(
             name="WeatherAgent",
-            system_prompt=PROMPT_WEATHER_AGENT,
+            system_prompt=system_prompt,
             tools_enabled=True,
         )
+        self.my_tool_specs = my_tool_specs
 
 
 class LocationAgent(BaseAgent):
-    DESCRIPTION = "Summarizes a place via search_location_info(location), with coordinates and URL."
+    DESCRIPTION = "Provides summarized information about a specified location, including details like coordinates and relevant links if available."
 
     def __init__(self):
+        # Define the specific tools this agent has access to
+        my_tool_specs = [ALL_TOOL_SPECS[1]]
+        # Define the specific instruction for these tools
+        my_tool_instruction = "You have access to a tool that retrieves information about a given location."
+
+        # Dynamically generate the system prompt using the helper function
+        system_prompt = make_tool_agent_prompt(
+            agent_name=self.__class__.__name__,
+            tool_instruction=my_tool_instruction,
+            base_template=PROMPT_LOCATION_AGENT_TEMPLATE
+        )
         super().__init__(
             name="LocationAgent",
-            system_prompt=PROMPT_LOCATION_AGENT,
+            system_prompt=system_prompt,
             tools_enabled=True,
         )
+        self.my_tool_specs = my_tool_specs
 
 
 class SynthesizerAgent(BaseAgent):
