@@ -1,7 +1,7 @@
 # config.py
 OPENAI_API_KEY = "your_api_key_here"
 OPENAI_BASE_URL = "http://localhost:7676/v1"
-OPENAI_MODEL = "Qwen3-14B-AWQ"
+OPENAI_MODEL = "Qwen3-4B-AWQ"
 
 REQUEST_TIMEOUT = 120
 DEFAULT_TEMPERATURE = 0.2
@@ -16,6 +16,7 @@ Your task:
 - Extract clean inputs for each agent
 - Return STRICT JSON only (no extra text) with this schema:
 {{
+  "reasoning": "Your thought process: interpret the request, map needs to agent capabilities, justify inclusions/exclusions."
   "plan": [
     {{"agent": "<AgentName>", "input": "<string>"}}
     // You may include multiple steps; order matters.

@@ -1,4 +1,5 @@
 import json
+import ast
 import uuid
 from typing import List, Dict, Any, Optional
 
@@ -58,6 +59,7 @@ class PlanStep(BaseModel):
     input: str = Field(..., description="Input to pass to the agent.")
 
 class PlannerOutput(BaseModel):
+    reasoning: str = Field(default="", description="Reason on why choosing the plan bellow")
     plan: List[PlanStep] = Field(default_factory=list)
     notes: str = Field(default="", description="Rationale from the planner.")
 
@@ -190,15 +192,16 @@ class PlannerAgent(BaseAgent):
         message = chat_completion(
             self.memory.get(),
             tools=None,
-            response_format={"type": "json_object"}  # helps produce clean JSON on compatible servers
+            response_model=PlannerOutput
         )
         out = (message.get("content") or "").strip()
 
         # Robust JSON extraction
         try:
-            start = out.find("{")
-            end = out.rfind("}")
-            obj = json.loads(out[start:end + 1])
+            out = ast.literal_eval(out)
+            obj = PlannerOutput.model_validate_json(json.dumps(out)).model_dump()
+            logger.info(f"This is content of planning agent {obj}")
+
         except Exception as e:
             logger.warning(f"[PlannerAgent] Could not parse JSON, falling back due to: {e}")
             # Fallback heuristic
