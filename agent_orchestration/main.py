@@ -55,8 +55,8 @@ def run_orchestration(user_input: str) -> str:
 if __name__ == "__main__":
     queries = [
         "Tell me information about BEIJING, also tell me the current weather of Beijing",
-        "What's the weather in Ha Noi today?",
-        "Give me some information about Tokyo",
+        # "What's the weather in Ha Noi today?",
+        # "Give me some information about Tokyo",
     ]
     for q in queries:
         logger.info("=" * 60)

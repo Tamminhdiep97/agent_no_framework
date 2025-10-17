@@ -1,7 +1,10 @@
 # llm.py
 import requests
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Type
+
+from pydantic import BaseModel
 from loguru import logger
+
 from config import OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL, REQUEST_TIMEOUT, DEFAULT_TEMPERATURE
 
 def chat_completion(
@@ -9,7 +12,7 @@ def chat_completion(
     tools: Optional[List[Dict[str, Any]]] = None,
     tool_choice: Optional[str] = "auto",
     temperature: float = DEFAULT_TEMPERATURE,
-    response_format: Optional[Dict[str, Any]] = None,
+    response_model: Optional[Type["BaseModel"]] = None,
 ) -> Dict[str, Any]:
     """
     Call an OpenAI-compatible /chat/completions endpoint using requests.
@@ -24,6 +27,16 @@ def chat_completion(
         "messages": messages,
         "temperature": temperature,
     }
+    if response_model is not None:
+        schema = response_model.model_json_schema()
+        payload["response_format"] = {
+            "type": "json_schema",
+            "json_schema": {
+                "name": response_model.__name__.lower(),
+                "strict": True,
+                "schema": schema,
+            },
+        }
     if tools is not None:
         payload["tools"] = tools
         if tool_choice is not None:
