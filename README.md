@@ -65,8 +65,11 @@ This project is licensed under The Unlicense.
 
 - **Conversation Capability**: Enhance the agents to support multi-turn conversations, tracking context and allowing more natural, continuous interactions.
 - **Chat-History Database**: Integrate a database (e.g., SQLite, PostgreSQL, or Redis) to persist chat histories, enabling session continuity and retrieval.
+- **Manual MCP Service**: Plan to develop and integrate manual MCP code that can serve tool functionalities in a dedicated, separate service. This allows for better modularization and scalability of the tool-serving architecture.
 - **Multi-User Support**: Implement robust database handling to manage chat histories for multiple users, ensuring separation, privacy, and efficient access.
 - **Load Balancing**: Develop mechanisms to balance requests and database writes across multiple users, improving scalability and reliability for concurrent interactions.
+
+- Additional improvements and features will be documented here as the project evolves.
 
 ---
 
