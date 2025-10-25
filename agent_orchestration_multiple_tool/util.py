@@ -21,7 +21,7 @@ def render_mermaid_trace(trace):
             if tool_calls:
                 for j, call in enumerate(tool_calls):
                     tool_name = call["tool_call"]["name"]
-                    result_preview = call["result"][:50].replace('"', "'")
+                    result_preview = call["result"].replace('"', "'")
                     lines.append(f'    C{i} --> D{i}_{j}["CallCheck: {tool_name}"]')
                     lines.append(f'    D{i}_{j} --> E{i}_{j}["Result: {result_preview}..."]')
                     lines.append(f'    E{i}_{j} --> F{i}["{agent} Output"]')
@@ -35,7 +35,7 @@ def render_mermaid_trace(trace):
         lines.append('    F0 --> G["SynthesizerAgent"]')
         for i in range(1, len(plan)):
             lines.append(f'    F{i} --> G')
-        final_preview = trace["final_answer"].replace("\n", " ")[:50]
+        final_preview = trace["final_answer"].replace("\n", " ")
         lines.append(f'    G --> H["Final Answer: {final_preview}..."]')
 
     lines.append("```")

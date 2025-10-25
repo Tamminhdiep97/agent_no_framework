@@ -25,6 +25,7 @@ TOOL_FUNCS = {
     "get_nutrition_info": t.get_nutrition_info,
     "check_symptom": t.check_symptom,
     "find_local_clinics": t.find_local_clinics,
+    "fetch_webpage_summary": t.fetch_webpage_summary,
 }
 
 ALL_TOOL_SPECS = [
@@ -73,8 +74,28 @@ ALL_TOOL_SPECS = [
         "function": {
             "name": "find_local_clinics",
             "description": "Find nearby clinics given a location",
-            "parameters": {"type": "object", "properties": {"location": {"type": "string"}}, "required": ["location"]},
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {"type": "string"}
+                },
+                "required": ["location"]
+            },
         },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "fetch_webpage_summary",
+            "description": "Fetch and summarize content from a trust url",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string", "format": "uri"}
+                },
+                "required": ["url"],
+            }
+        }
     },
 ]
 
@@ -189,6 +210,25 @@ class BaseAgent:
                 self.execution_log.append({"tool_call": {"name": fn, "args": args}, "result": str(result)})
                 logger.info(f"tool call: name: {fn}, args: {args}, result: {str(result)}")
                 # logger.info(f"[{self.name}] Tool result: {result}")
+                urls = t.extract_trusted_url(str(result))
+                if urls:
+                    logger.info(f"[{self.name}]: auto follow up: fetching: {urls}")
+                fetch_result = []
+                for url in urls:
+                    try:
+                        logger.info(f"fetching: {url}")
+                        fetch_result = TOOL_FUNCS["fetch_webpage_summary"](url)
+                        logger.info(fetch_result)
+                    except Exception as e:
+                        fetch_result = f"Follow up fetch failed: {e}"
+                    fetch_id = f"call_{uuid.uuid4().hex[:8]}"
+                    self.memory.add_tool_result(fetch_id, "fetch_webpage_summary", fetch_result)
+                    self.execution_log.append(
+                        {
+                            "tool_call": {"name": "fetch_webpage_summary", "args": {"url": url}},
+                            "result": fetch_result
+                        }
+                    )
 
             # ask again
             message = chat_completion(self.memory.get(), tools=self.my_tool_specs if self.tools_enabled else None)

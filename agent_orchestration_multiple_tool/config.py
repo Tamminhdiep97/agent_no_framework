@@ -10,6 +10,16 @@ NEWS_API_KEY = env["NEWS_API_KEY"] if env["NEWS_API_KEY"] != "None" else None
 EDAMAM_APP_ID = env["EDAMAM_APP_ID"] if env["EDAMAM_APP_ID"] != "None" else None
 EDAMAM_APP_KEY = env["EDAMAM_APP_KEY"] if env["EDAMAM_APP_KEY"] != "None" else None
 
+ALLOWED_DOMAINS = [
+    "medlineplus.gov",
+    "nih.gov",
+    "who.int",
+    "cdc.gov",
+    "mayoclinic.org",
+    "webmd.com",
+    "www.google.com",
+    "wsearch.nlm.nih.gov",
+]
 
 REQUEST_TIMEOUT = 120
 DEFAULT_TEMPERATURE = 0.2

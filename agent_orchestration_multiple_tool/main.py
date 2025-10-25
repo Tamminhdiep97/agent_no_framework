@@ -85,7 +85,8 @@ def run_orchestration(user_input: str) -> str:
 if __name__ == "__main__":
     queries = [
         # "What are today's top headlines? Also, is BBC a trustworthy source?",
-        "I have a headache and want to eat a hamburger. Is that good? Find clinics near London."
+        # "I have a headache and want to eat a hamburger. Is that good? Find clinics near London."
+        "I have a headache, what could be the reason, also, find clinics near London"
     ]
     for q in queries:
         logger.info("=" * 60)
