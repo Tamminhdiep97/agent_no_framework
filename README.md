@@ -22,6 +22,16 @@ This repository demonstrates a lightweight agent orchestration system in Python,
   - `orchestrator.py`: Logic for planning, executing, and synthesizing multi-agent workflows.
   - `llm.py`: Utility for calling the OpenAI-compatible API.
 
+- `agent_orchestration_multiple_tool/`  
+  - `agents.py`: Advanced agent class implementations with multiple specialized agents (NewsAgent, HealthAgent, etc.) and shared memory capabilities.
+  - `config.py`: Configuration settings and prompt templates for multi-tool agents.
+  - `llm.py`: Utility for calling the OpenAI-compatible API with structured response support.
+  - `main.py`: Orchestrator logic for coordinating multi-tool agent workflows.
+  - `tool.py`: Collection of specialized tools for news, health, and web scraping functionalities.
+  - `util.py`: Utility functions for visualization and trace logging.
+  - `requirements.txt`: Dependencies for the multi-tool agent system.
+  - `env.example`: Example environment configuration file.
+
 - `structed_output/`  
   - `main.py`: Example of structured output for math tutoring, using Pydantic for schema validation.
 
@@ -63,12 +73,17 @@ This project is licensed under The Unlicense.
 
 ## Future Work
 
-- **Conversation Capability**: Enhance the agents to support multi-turn conversations, tracking context and allowing more natural, continuous interactions.
-- **Chat-History Database**: Integrate a database (e.g., SQLite, PostgreSQL, or Redis) to persist chat histories, enabling session continuity and retrieval.
-- **Manual MCP Service**: Plan to develop and integrate manual MCP code that can serve tool functionalities in a dedicated, separate service. This allows for better modularization and scalability of the tool-serving architecture.
-- **Multi-User Support**: Implement robust database handling to manage chat histories for multiple users, ensuring separation, privacy, and efficient access.
-- **Load Balancing**: Develop mechanisms to balance requests and database writes across multiple users, improving scalability and reliability for concurrent interactions.
+- **Agent Scratchpad + Long Term Memory**: Implement advanced memory systems that allow agents to maintain working scratchpads for complex reasoning tasks and long-term memory stores for retaining important information across sessions.
 
+- **Conversation Capability**: Enhance the agents to support multi-turn conversations, tracking context and allowing more natural, continuous interactions.
+
+- **Chat-History Database**: Integrate a database (e.g., SQLite, PostgreSQL, or Redis) to persist chat histories, enabling session continuity and retrieval.
+
+- **Manual MCP Service**: Plan to develop and integrate manual MCP code that can serve tool functionalities in a dedicated, separate service. This allows for better modularization and scalability of the tool-serving architecture.
+
+- **Multi-User Support**: Implement robust database handling to manage chat histories for multiple users, ensuring separation, privacy, and efficient access.
+
+- **Load Balancing**: Develop mechanisms to balance requests and database writes across multiple users, improving scalability and reliability for concurrent interactions.
 - Additional improvements and features will be documented here as the project evolves.
 
 ---
