@@ -1,6 +1,8 @@
+import re
 import requests
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 from loguru import logger
+from bs4 import BeautifulSoup
 
 import config as cfg
 
@@ -12,6 +14,36 @@ headers = {
 # ======================
 # NEWS TOOLS (uses NewsAPI if key provided, else falls back to Wikipedia)
 # ======================
+
+
+def extract_trusted_url(text: str, allowed_domains=None) -> str | None:
+    URL_PATTERN = re.compile(r'https?://[^\s<>|\\^`[\]]+')
+    urls = URL_PATTERN.findall(text)
+    result = []
+    logger.info(f"URL: {urls}")
+    for url in urls:
+        logger.info(urlparse(url).netloc)
+        if urlparse(url).netloc in cfg.ALLOWED_DOMAINS:
+            result.append(url)
+    logger.info(f"Result: {result}")
+    return result
+
+
+def fetch_webpage_summary(url: str) -> str:
+    parsed = urlparse(url)
+    if parsed.netloc not in cfg.ALLOWED_DOMAINS:
+        return f"URL not allowed for scraping: {url}"
+    try:
+        response = requests.get(url, headers=headers, timeout=cfg.REQUEST_TIMEOUT)
+        if not response.ok:
+            return f"Failed to fetch {url}, status code: {response.status_code}"
+        soup = BeautifulSoup(response.text, "html.parser")
+        for script in soup(["script", "style"]):
+            script.decompose()
+        text = " ".join(soup.stripped_strings)
+        return f"Summary of {url}: {text}" if text else "No content found"
+    except Exception as e:
+        return f"ERROR fetching {url}: {str(e)}"
 
 
 def get_top_headlines() -> str:
@@ -42,6 +74,7 @@ def get_top_headlines() -> str:
         logger.warning(f"Wikipedia fallback failed: {e}")
     return "Unable to fetch top headlines."
 
+
 def search_news_articles(query: str) -> str:
     if cfg.NEWS_API_KEY:
         try:
@@ -60,6 +93,7 @@ def search_news_articles(query: str) -> str:
         except Exception as e:
             logger.warning(f"NewsAPI search error: {e}")
     return f"No recent news found for '{query}'."
+
 
 def get_news_source_info(source: str) -> str:
     # Use Wikipedia to get info about the source
@@ -107,6 +141,7 @@ def get_news_source_info(source: str) -> str:
 # ======================
 # HEALTH TOOLS
 # ======================
+
 
 def get_nutrition_info(food: str) -> str:
     if cfg.EDAMAM_APP_ID and cfg.EDAMAM_APP_KEY:
@@ -157,9 +192,11 @@ def check_symptom(symptom: str) -> str:
     # Use OpenFDA or NIH MedlinePlus (public)
     # Simple approach: link to MedlinePlus search
     safe_symptom = quote(symptom)
+    url = f"https://www.google.com/search?q=site:medlineplus.gov+{safe_symptom}"
+    url = f"https://wsearch.nlm.nih.gov/ws/query?db=healthTopics&term={safe_symptom}"
     return (
         f"For '{symptom}', see trusted medical info: "
-        f"https://medlineplus.gov/search/?query={safe_symptom}"
+        f"{url}"
     )
 
 def find_local_clinics(location: str) -> str:
