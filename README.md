@@ -8,6 +8,7 @@ This repository demonstrates a lightweight agent orchestration system in Python,
 - **Tool Integration**: Agents use built-in tools to fetch weather data and look up location information via Wikipedia.
 - **OpenAI-Compatible API**: Interacts with OpenAI-compatible endpoints for chat completions, supporting tool calls and structured responses.
 - **Memory Management**: Each agent maintains its own message history for contextual conversations.
+- **Agent Scratchpad Functionality**: Advanced agent implementations with internal scratchpads for complex reasoning, including specialized NewsAgent and MathAgent with dedicated reasoning capabilities.
 - **Structured Output Example**: Includes a math tutor that validates and parses structured responses using Pydantic models.
 
 ## Project Structure
@@ -32,6 +33,16 @@ This repository demonstrates a lightweight agent orchestration system in Python,
   - `requirements.txt`: Dependencies for the multi-tool agent system.
   - `env.example`: Example environment configuration file.
 
+- `agent_scratchpad/`
+  - `agents.py`: Implements specialized agents (NewsAgent, MathAgent) with advanced planning and orchestration capabilities, featuring agent-specific scratchpads for internal reasoning
+  - `config.py`: Configuration settings and prompt templates for agents, including specialized templates for news and math queries
+  - `llm.py`: Utility for calling the OpenAI-compatible API with support for tool calls and structured responses
+  - `main.py`: Orchestrator logic for coordinating multi-agent workflows and executing agent plans
+  - `tool.py`: Implements various tools including web search functionality for fetching webpage summaries and news articles
+  - `util.py`: Utility functions for visualization and trace logging, including Mermaid diagram generation
+  - `env.example`: Example environment configuration file
+  - `scratchpad_logs/`: Detailed logs of agent scratchpads and orchestration workflows that capture internal reasoning processes
+
 - `structed_output/`  
   - `main.py`: Example of structured output for math tutoring, using Pydantic for schema validation.
 
@@ -40,6 +51,12 @@ This repository demonstrates a lightweight agent orchestration system in Python,
 1. **Planning**: The planner agent decides which specialist agents handle each part of the user's request.
 2. **Execution**: The orchestrator runs the selected agents, calling tools as needed.
 3. **Synthesis**: Results from agents are combined into a final, user-facing answer.
+
+**Agent Scratchpad Specifics:**
+- Each agent in the agent_scratchpad has its own internal scratchpad for detailed reasoning and thought processes
+- Agents can use multiple tools in sequence to complete complex tasks
+- Scratchpad logs capture the full reasoning process and tool interactions
+- Supports specialized agents like NewsAgent and MathAgent with domain-specific capabilities
 
 ## Example Use Cases
 
