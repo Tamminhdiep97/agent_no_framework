@@ -22,7 +22,7 @@ ALLOWED_DOMAINS = [
 ]
 
 REQUEST_TIMEOUT = 120
-DEFAULT_TEMPERATURE = 0.2
+DEFAULT_TEMPERATURE = 0.1
 
 # -----------------------------
 
@@ -87,11 +87,12 @@ Always remind users to consult a professional for medical advice.
 """
 
 PROMPT_MATH_AGENT_TEMPLATE = PROMPT_AGENT_WITH_TOOLS_TEMPLATE + """
-Use your tools to perform mathematical calculations.
+Use your tools to perform mathematical calculations. Always use tool if possible, the answer need high accurate
 If the user's request requires additional context or information beyond basic math, consider using the fetch_webpage_summary tool to search for relevant information.
 Think through the math problem step by step before providing the answer.
 Document your calculation process in your scratchpad thoughts.
 Make sure to handle division by zero errors appropriately.
+ALWAYS DOUBLE CHECK USING TOOLS PROVIDED
 """
 
 # -------------------------------------------
@@ -126,4 +127,3 @@ def make_tool_agent_prompt(agent_name: str, tool_instruction: str, base_template
         AGENT_NAME=agent_name,
         TOOL_INSTRUCTION=tool_instruction
     )
-

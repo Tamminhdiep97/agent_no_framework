@@ -1,4 +1,6 @@
 # orchestrator.py
+import os
+from datetime import datetime
 import uuid
 from typing import Dict
 from loguru import logger
@@ -31,7 +33,8 @@ def run_orchestration(user_input: str) -> str:
     planner = PlannerAgent(agent_catalog=plan_catalog)
     plan_obj = planner.plan(user_input)
     plan = plan_obj.get("plan", [])
-    logger.info(f"[Orchestrator] Plan: {plan} | Notes: {plan_obj.get('notes')}")
+    logger.info(f"[Orchestrator] Plan: {
+                plan} | Notes: {plan_obj.get('notes')}")
 
     # 2) Execute plan sequentially
     outputs: Dict[str, str] = {}
@@ -42,7 +45,8 @@ def run_orchestration(user_input: str) -> str:
         agent_name = step.get("agent")
         agent_input = step.get("input") or user_input
         if agent_name not in AGENT_REGISTRY:
-            logger.warning(f"[Orchestrator] Unknown agent '{agent_name}', skipping.")
+            logger.warning(f"[Orchestrator] Unknown agent '{
+                           agent_name}', skipping.")
             continue
 
         agent = _create_agent(AGENT_REGISTRY[agent_name])
@@ -50,7 +54,8 @@ def run_orchestration(user_input: str) -> str:
         try:
             result = agent.run(agent_input)
         except TypeError as e:
-            logger.warning(f"[Orchestrator] run() failed with {e}; retrying with explicit binding.")
+            logger.warning(f"[Orchestrator] run() failed with {
+                           e}; retrying with explicit binding.")
             result = BaseAgent.run(agent, agent_input)
 
         outputs[agent_name] = result
@@ -81,33 +86,34 @@ def run_orchestration(user_input: str) -> str:
     }
     mermaid_md = util.render_mermaid_trace(trace)
     if mermaid_md.strip().startswith("```mermaid"):
-        clean_code = mermaid_md.split("```mermaid", 1)[1].split("```", 1)[0].strip()
+        clean_code = mermaid_md.split("```mermaid", 1)[
+            1].split("```", 1)[0].strip()
     else:
         clean_code = mermaid_md.strip()
     logger.info(f"memory: {mermaid_md}")
     # Export
-    md_path = f"trace_{uuid.uuid4().hex[:8]}.md"
+    os.makedirs("trace_logs", exist_ok=True)
+    id_file = uuid.uuid4().hex[:8]
+    md_path = f"trace_logs/visualize_{id_file}.md"
     util.save_mermaid_to_md(clean_code, md_path)
 
     # Save trace which includes all scratchpads
-    save_trace_with_scratchpads(trace)
+    save_trace_with_scratchpads(trace, id_file)
 
     return final_answer
 
 
-def save_trace_with_scratchpads(trace: Dict[str, str]):
+def save_trace_with_scratchpads(trace: Dict[str, str], id_file):
     """Save the full trace including scratchpads to a file"""
-    import os
-    from datetime import datetime
 
     # Create scratchpad_logs directory if it doesn't exist
-    os.makedirs("trace_logs", exist_ok=True)
 
     # Sanitize user input for filename
     user_input = trace["user_input"]
-    sanitized_input = "".join(c if c.isalnum() or c in " _-" else "_" for c in user_input)[:50]
+    sanitized_input = "".join(
+        c if c.isalnum() or c in " _-" else "_" for c in user_input)[:50]
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"trace_logs/full_trace_{sanitized_input}_{timestamp}_{uuid.uuid4().hex[:8]}.json"
+    filename = f"trace_logs/full_trace_{id_file}.json"
 
     import json
     with open(filename, "w", encoding="utf-8") as f:
@@ -118,10 +124,11 @@ def save_trace_with_scratchpads(trace: Dict[str, str]):
 
 if __name__ == "__main__":
     queries = [
-        "What are today's top headlines?",
-        "Get me the latest news about weather in south Viet Nam",
-        f"What is {random.randint(1, 10000)} plus {random.randint(1, 20000)}?",
-        f"Divide {random.randint(1, 10000)} by {random.randint(1, 20000)}"
+        # "What are today's top headlines?",
+        # "Get me the latest news about weather in south Viet Nam",
+        # f"What is {random.randint(1, 10000)} plus {random.randint(1, 20000)}?",
+        # f"Divide {random.randint(1, 10000)} by {random.randint(1, 20000)}"
+        "What is the result of (2^12 + 2^13)*3/2 + 15"
     ]
     for q in queries:
         logger.info("=" * 60)

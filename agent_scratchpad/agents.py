@@ -380,7 +380,7 @@ class MathAgent(BaseAgent):
             }
         ]
         my_tool_instruction = (
-            "You can perform basic arithmetic operations including addition, subtraction, "
+            "You can perform basic arithmetic operations using tool provided, including addition, subtraction, "
             "multiplication, and division. Always double-check calculations before providing results."
         )
         system_prompt = make_tool_agent_prompt(
