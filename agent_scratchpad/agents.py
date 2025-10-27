@@ -105,12 +105,14 @@ ALL_TOOL_SPECS = [
 
 
 class PlanStep(BaseModel):
-    agent: str = Field(..., description="Name of the agent to call (e.g., 'NewsAgent').")
+    agent: str = Field(...,
+                       description="Name of the agent to call (e.g., 'NewsAgent').")
     input: str = Field(..., description="Input to pass to the agent.")
 
 
 class PlannerOutput(BaseModel):
-    reasoning: str = Field(default="", description="Reason on why choosing the plan bellow")
+    reasoning: str = Field(
+        default="", description="Reason on why choosing the plan bellow")
     plan: List[PlanStep] = Field(default_factory=list)
     notes: str = Field(default="", description="Rationale from the planner.")
 
@@ -123,7 +125,7 @@ class Scratchpad:
     def add_thought(self, thought_type: str, content: str, metadata: Optional[Dict[str, Any]] = None):
         """Add a thought to the scratchpad"""
         thought = {
-            "thought_type": thought_type,  # e.g., "reasoning", "planning", "analysis", "tool_selection"
+            "thought_type": thought_type,
             "content": content,
             "timestamp": uuid.uuid4().hex[:8],
             "metadata": metadata or {}
@@ -149,7 +151,8 @@ class Scratchpad:
 
         scratchpad_text = "=== AGENT SCRATCHPAD ===\n"
         for thought in self.thoughts:
-            scratchpad_text += f"[{thought['thought_type']}] {thought['content']}\n"
+            scratchpad_text += f"[{thought['thought_type']
+                                   }] {thought['content']}\n"
             if thought['metadata']:
                 scratchpad_text += f"  Metadata: {thought['metadata']}\n"
         scratchpad_text += "=== END SCRATCHPAD ==="
@@ -169,7 +172,8 @@ class Memory:
         self.history.append(msg)
 
     def add_assistant_tool_calls(self, tool_calls: List[Dict[str, Any]]):
-        self.history.append({"role": "assistant", "content": None, "tool_calls": tool_calls})
+        self.history.append(
+            {"role": "assistant", "content": None, "tool_calls": tool_calls})
 
     def add_tool_result(self, tool_call_id: str, name: str, result: Any):
         self.history.append({
@@ -185,7 +189,7 @@ class Memory:
 
 # ----- BaseAgent -----
 class BaseAgent:
-    DESCRIPTION: str = ""  # Each agent should override this
+    DESCRIPTION: str = ""
 
     def __init__(self, name: str, system_prompt: str, tools_enabled: bool = False, memory=None):
         self.name = name
@@ -208,10 +212,12 @@ class BaseAgent:
         self.memory.add("user", user_input)
 
         # Add initial thought to scratchpad
-        self.scratchpad.add_thought("initial_analysis", f"Processing user request: {user_input}")
+        self.scratchpad.add_thought(
+            "initial_analysis", f"Processing user request: {user_input}")
 
         # First call
-        message = chat_completion(self.memory.get(), tools=self.my_tool_specs if self.tools_enabled else None)
+        message = chat_completion(
+            self.memory.get(), tools=self.my_tool_specs if self.tools_enabled else None)
 
         loops = 0
         while True:
@@ -225,16 +231,16 @@ class BaseAgent:
                     # Add final thoughts to scratchpad
                     self.scratchpad.add_thought("final_response", content)
                     logger.info(f"[{self.name}] Output: {content}")
-                # Log the scratchpad to a file
-                self._log_scratchpad_to_file(user_input)
                 return content
 
             # record the tool_calls
             self.memory.add_assistant_tool_calls(tool_calls)
 
             # Add tool selection thought to scratchpad
-            tool_names = [tc.get("function", {}).get("name") for tc in tool_calls]
-            self.scratchpad.add_thought("tool_selection", f"Selected tools: {tool_names}")
+            tool_names = [tc.get("function", {}).get("name")
+                          for tc in tool_calls]
+            self.scratchpad.add_thought(
+                "tool_selection", f"Selected tools: {tool_names}")
 
             # execute tools
             for tc in tool_calls:
@@ -246,7 +252,8 @@ class BaseAgent:
                     try:
                         args = json.loads(raw_args) if raw_args.strip() else {}
                     except json.JSONDecodeError:
-                        logger.warning(f"[{self.name}] Invalid JSON args for {fn}: {raw_args!r}")
+                        logger.warning(f"[{self.name}] Invalid JSON args for {
+                                       fn}: {raw_args!r}")
                         args = {}
                 elif isinstance(raw_args, dict):
                     args = raw_args
@@ -265,45 +272,27 @@ class BaseAgent:
                         result = f"Tool '{fn}' failed: {e}"
 
                 self.memory.add_tool_result(call_id, fn, result)
-                self.execution_log.append({"tool_call": {"name": fn, "args": args}, "result": str(result)})
+                self.execution_log.append(
+                    {"tool_call": {"name": fn, "args": args}, "result": str(result)})
 
                 # Add tool execution thought to scratchpad
-                self.scratchpad.add_thought("tool_execution", f"Executed {fn} with args {args}, result: {str(result)}")
+                self.scratchpad.add_thought("tool_execution", f"Executed {
+                                            fn} with args {args}, result: {str(result)}")
 
-                logger.info(f"tool call: name: {fn}, args: {args}, result: {str(result)}")
+                logger.info(f"tool call: name: {fn}, args: {
+                            args}, result: {str(result)}")
                 # logger.info(f"[{self.name}] Tool result: {result}")
 
             # ask again
-            message = chat_completion(self.memory.get(), tools=self.my_tool_specs if self.tools_enabled else None)
+            message = chat_completion(
+                self.memory.get(), tools=self.my_tool_specs if self.tools_enabled else None)
 
             if loops >= max_tool_loops:
                 logger.warning(f"[{self.name}] Max tool loops reached.")
                 content = (message.get("content") or "").strip()
                 if content:
                     self.memory.add("assistant", content)
-                # Log the scratchpad to a file
-                self._log_scratchpad_to_file(user_input)
                 return content
-
-    def _log_scratchpad_to_file(self, user_input: str):
-        """Log the scratchpad to a file for analysis"""
-
-        # Create scratchpad_logs directory if it doesn't exist
-        os.makedirs("scratchpad_logs", exist_ok=True)
-
-        # Sanitize user input for filename
-        sanitized_input = "".join(c if c.isalnum() or c in " _-" else "_" for c in user_input)[:50]
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"scratchpad_logs/{self.name}_{sanitized_input}_{timestamp}_{uuid.uuid4().hex[:8]}.txt"
-
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(f"Agent: {self.name}\n")
-            f.write(f"User Input: {user_input}\n")
-            f.write(f"Timestamp: {datetime.now()}\n")
-            f.write("\n")
-            f.write(self.scratchpad.get_scratchpad_text())
-
-        logger.info(f"Scratchpad logged to {filename}")
 
 
 # ----- Specialized Agents -----
@@ -334,13 +323,16 @@ class PlannerAgent(BaseAgent):
         # Robust JSON extraction
         try:
             out = ast.literal_eval(out)
-            obj = PlannerOutput.model_validate_json(json.dumps(out)).model_dump()
+            obj = PlannerOutput.model_validate_json(
+                json.dumps(out)).model_dump()
             logger.info(f"This is content of planning agent {obj}")
             # Add plan to scratchpad
-            self.scratchpad.add_thought("planning_result", f"Generated plan: {obj}")
+            self.scratchpad.add_thought(
+                "planning_result", f"Generated plan: {obj}")
 
         except Exception as e:
-            logger.warning(f"[PlannerAgent] Could not parse JSON, falling back due to: {e}")
+            logger.warning(
+                f"[PlannerAgent] Could not parse JSON, falling back due to: {e}")
             # Fallback heuristic
             plan = []
             lowered = user_input.lower()
@@ -350,7 +342,8 @@ class PlannerAgent(BaseAgent):
                 plan.append({"agent": "MathAgent", "input": user_input})
             obj = {"plan": plan, "notes": "fallback plan"}
             # Add fallback plan to scratchpad
-            self.scratchpad.add_thought("planning_result", f"Fallback plan: {obj}")
+            self.scratchpad.add_thought(
+                "planning_result", f"Fallback plan: {obj}")
         return obj
 
 

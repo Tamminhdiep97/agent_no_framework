@@ -89,37 +89,31 @@ def run_orchestration(user_input: str) -> str:
     md_path = f"trace_{uuid.uuid4().hex[:8]}.md"
     util.save_mermaid_to_md(clean_code, md_path)
 
-    # Also save all scratchpads to a file
-    save_scratchpads_to_file(all_scratchpads, user_input)
+    # Save trace which includes all scratchpads
+    save_trace_with_scratchpads(trace)
 
     return final_answer
 
 
-def save_scratchpads_to_file(scratchpads: Dict[str, str], user_input: str):
-    """Save all agent scratchpads to a file"""
+def save_trace_with_scratchpads(trace: Dict[str, str]):
+    """Save the full trace including scratchpads to a file"""
     import os
     from datetime import datetime
 
     # Create scratchpad_logs directory if it doesn't exist
-    os.makedirs("scratchpad_logs", exist_ok=True)
+    os.makedirs("trace_logs", exist_ok=True)
 
     # Sanitize user input for filename
+    user_input = trace["user_input"]
     sanitized_input = "".join(c if c.isalnum() or c in " _-" else "_" for c in user_input)[:50]
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"scratchpad_logs/orchestration_{sanitized_input}_{timestamp}_{uuid.uuid4().hex[:8]}.txt"
+    filename = f"trace_logs/full_trace_{sanitized_input}_{timestamp}_{uuid.uuid4().hex[:8]}.json"
 
+    import json
     with open(filename, "w", encoding="utf-8") as f:
-        f.write("Orchestration Log\n")
-        f.write(f"User Input: {user_input}\n")
-        f.write(f"Timestamp: {datetime.now()}\n")
-        f.write("="*50 + "\n\n")
+        json.dump(trace, f, indent=2, ensure_ascii=False)
 
-        for agent_name, scratchpad_text in scratchpads.items():
-            f.write(f"--- SCRATCHPAD FOR {agent_name} ---\n")
-            f.write(scratchpad_text)
-            f.write("\n\n")
-
-    logger.info(f"All scratchpads logged to {filename}")
+    logger.info(f"Full trace with scratchpads logged to {filename}")
 
 
 if __name__ == "__main__":
