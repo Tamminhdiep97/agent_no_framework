@@ -209,3 +209,5 @@ __marimo__/
 */trace_*.md
 */scratchpad_logs/
 */trace_logs/
+
+*/vector_store/storage/*

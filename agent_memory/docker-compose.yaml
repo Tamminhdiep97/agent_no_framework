@@ -1,0 +1,53 @@
+services:
+  db:
+      image: postgres:14
+      container_name: agent_db
+      ports:
+        - 5432:5432
+      expose:
+        - "5432"
+      restart: always
+      environment:
+        POSTGRES_USER: ${DB_USER}
+        POSTGRES_PASSWORD: ${DB_PASSWORD}
+        POSTGRES_DB: ${DB_NAME}
+      volumes:
+        - ./db_data/:/var/lib/postgresql/data/
+      networks:
+        - agent-network
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+        interval: 20s
+        timeout: 5s
+        retries: 10
+
+
+
+  vector_store:
+      image: qdrant/qdrant:v1.15
+      restart: always
+      container_name: agent_vectorDb
+      configs:
+        - source: qdrant_config
+          target: /qdrant/config/production.yaml
+      ports:
+        - 6333:6333
+        - 6334:6334
+      expose:
+        - 6333
+        - 6334
+      volumes:
+        - ./vector_store/storage/:/qdrant/storage
+        - ./vector_store/qdrant_config.yaml:/qdrant/config/production.yaml
+      command: ./qdrant
+      networks:
+        - agent-network
+
+configs:
+  qdrant_config:
+    file: ./vector_store/qdrant_config.yaml
+
+networks:
+  agent-network:
+    driver: bridge
+
