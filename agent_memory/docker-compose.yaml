@@ -21,8 +21,6 @@ services:
         timeout: 5s
         retries: 10
 
-
-
   vector_store:
       image: qdrant/qdrant:v1.15
       restart: always
