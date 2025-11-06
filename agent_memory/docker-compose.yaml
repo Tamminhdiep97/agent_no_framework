@@ -21,7 +21,7 @@ services:
         timeout: 5s
         retries: 10
 
-  vector_store:
+  vector_db:
       image: qdrant/qdrant:v1.15
       restart: always
       container_name: agent_vectorDb
